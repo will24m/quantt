@@ -1,0 +1,40 @@
+import statsmodels.tsa.stattools as ts
+import yfinance as yf
+import pandas as pd
+
+def fetch_stock_data(ticker, months=6):
+  # Retrieve the stock data
+  stock_data = yf.Ticker(ticker).history(period='max')
+  
+  # Calculate the average price over the specified number of months
+  avg_price = stock_data['Close'].rolling(window=30*months).mean()
+  
+  return avg_price
+
+# Define the lists of stocks
+oil_stocks = ['XOM', 'CVX', 'COP', 'RDS-A', 'BP', 'TOT', 'E', 'STO', 'MRO', 'HES', 'DVN', 'OXY', 'APC', 'EOG', 'CXO']
+renewable_energy_stocks = ['NEE', 'XEL', 'SO', 'DUK', 'ED', 'PNW', 'AES', 'EXC', 'D', 'CNP', 'AEE', 'CMS', 'PEG', 'ETR', 'EIX']
+
+# Initialize dictionary to store cointegration scores
+cointegration_scores = {}
+
+# Loop through each pair of stocks and perform cointegration test
+for oil_stock in oil_stocks:
+  for renewable_energy_stock in renewable_energy_stocks:
+    stock1 = fetch_stock_data(oil_stock)
+    print(stock1)
+    stock2 = fetch_stock_data(renewable_energy_stock)
+    print(stock2)
+    cointegration_result = ts.coint(stock1, stock2)
+    cointegration_score = cointegration_result[0]
+    pvalue = cointegration_result[1]
+    # Store the cointegration score in the dictionary if it is above a certain threshold
+    if pvalue < 0.05:
+      cointegration_scores[oil_stock] = (renewable_energy_stock, cointegration_score)
+
+# Sort the dictionary by cointegration score
+sorted_cointegration_scores = sorted(cointegration_scores.items(), key=lambda x: x[1][1], reverse=True)
+
+# Output the dictionary with the highest cointegration scores
+highest_cointegration_scores = sorted_cointegration_scores[:5]
+print(highest_cointegration_scores)
